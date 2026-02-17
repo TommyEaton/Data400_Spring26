@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Data 400 Mini Project</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Tommy Eaton" />
+    <script src="libs/header-attrs-2.30/header-attrs.js"></script>
+    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+.title[
+# Data 400 Mini Project
+]
+.subtitle[
+## Technology Policies in U.S. Public Schools
+]
+.author[
+### Tommy Eaton
+]
+.institute[
+### RStudio, PBC
+]
+.date[
+### 2016/12/12 (updated: 2026-02-16)
+]
+
+---
+
+class: center, middle
+
+# Technology Policies in U.S. Schools  
+### Cell Phones • AI • Digital Literacy  
+
+
+---
+# Overview  
+### What this presentation covers:
+- Research question, Dataset
+- Variables of the dataset
+- Tractability  
+- Data retrieval and cleaning  
+- Exploratory Data Analysis (EDA)  
+- Four policy models  
+- Why my models failed (and why that matters)  
+- transition to Visualization as the analytic method  
+- Implications for stakeholders  
+- Ethical, legal, societal considerations  
+
+---
+# Research Question  
+## What dataset am I using?
+
+- **Research Question:** How do U.S. public schools differ in their policies on cell‑phone usage, AI usage, and digital literacy instruction? How are these differences explained by school characteristics such as region, grade level, locale, poverty level, school size, and student demographics?
+
+- **Dataset:** I will be using National Center for Education Statistics (NCES School Pulse Panel (SPP)) dataset which contains data from the 2024 year from a sample of 4,000 public elementary, middle, high and combined-grade schools.
+---
+**Variables of the Dataset:**
+ - **Region:** Reported in SPP as Northeast, Midwest, South, and West.
+ - **Locale (school location or urbanicity):** Reported in SPP as city, suburban, town, or rural. Locale relies on urban and rural definitions developed by the U.S. Census Bureau, and each type of locale is one category in its entirety.
+ - **School level:** Reported in SPP as elementary, middle/combined, and high/secondary.
+ - **School size:** Reported in SPP as 0 to 299, 300 to 499, 500 to 999, and greater than or equal to 1000 students. School size is derived from K-12 student enrollment information provided by the school in the SPP.
+ - **Poverty:** Reported in SPP as low or high poverty. SPP poverty relies on the Income-to-Poverty ratio (IPR) for the neighborhood surrounding the school. The IPR estimates come from NCES's EDGE School Neighborhood Poverty Estimates. The IPR is the percentage of family income that is above or below the federal poverty threshold set for the family's size and structure and is calculated for the neighborhood surrounding the school building. It ranges from 0 to 999, where lower IPR values indicate a greater degree of poverty.
+ - **Percent students of color:** Reported in SPP as less than or equal to 25% students of color, more than 25% to 75% students of color, or more than 75% students of color. Students of color are defined as students who are Black, Hispanic, Asian, American Indian/Alaska Native, or Two or More Races.
+---
+# Tractable Data  
+- NCES School Pulse Panel dataset is a collection of a national survey answers from a variety of schools, the one we will be using is directed towards technology in school. 
+- Analyzing four policy domains from this national survey dataset:
+  - Cell‑phone policy presence  
+  - Cell‑phone strictness  
+  - AI policy presence  
+  - Digital literacy instruction  
+
+# Why is this dataset Tractable: 
+- NCES dataset is organized in excel by sheets based on subgroups and tracts the answers from each school using school ID to each of the survey questions by percentage and standard deviation of those answers.  
+- NCES dataset has a manageable number of rows once we clean it to only include the data necessary for our analysis, making it easy to merge and compute models and visualizations.
+
+---
+# Data Retrieval:
+
+- Read the Data from its excel sheet by its sheet name and create subgroups by each sheet name due to the way the data is organized. Combined all sheets into a dataset, containing only the column names from each sheet I needed. 
+```python
+# Creating School Dataframe from excel sheet 
+import pandas as pd
+file_path = r"C:\Users\tommy\OneDrive\Desktop\DATA SENIOR CAP\NCES_Data_2024.xlsx"
+# Load the Excel file
+xls = pd.ExcelFile(file_path)
+# Combine all sheets into one dataset
+school_df = pd.concat(all_rows, ignore_index=True)
+# Sort by Description (question) and Category (response option)
+school_df = school_df.sort_values(["Description", "Category"])
+```
+---
+#Data Cleaning:
+- Removing all null and missing values 
+```python
+# Remove all rows where Category == "Missing"
+school_df = school_df[school_df["Category"] != "Missing"]
+# Drop any remaining NaN values
+school_df = school_df.dropna()
+```
+- Removing questions from the survey that are unrelated to our research question from the dataset 
+```python
+school_df1 = school_df[~school_df["Description"].isin(questions_to_remove)]
+school_df1 = school_df1.reset_index(drop=True)
+```
+---
+#Data Cleaning Part 2: 
+- Categorizing the questions from the national survey into three domains: Cell Phone Policy, AI Policy, Digital Literacy.
+```python
+def categorize_domain(desc):
+    d = str(desc).lower()   # convert to string safely
+    if "cell phone" in d or "smartwatch" in d or "phone" in d:
+        return "Cell Phone Policy"
+    if "ai" in d or "artificial intelligence" in d:
+        return "AI Policy"
+    if "digital literacy" in d:
+        return "Digital Literacy"
+    return "Other"
+school_df1["Domain"] = school_df1["Description"].apply(categorize_domain)
+```
+---
+#Data Cleaning Part 3: Grouping types of question within each of the three Domains. 
+- Each questions in the survey have key terms that distinguish them from each other, using the key terms I created a question group for each domain (Cell-Phone, AI, Digital-Literacy) to identify the specific type of questions within each domain. 
+- For example: Cell Phone has question groups that include Policy Presence, Policy Strictness, Policy Restrictions, Allowed Usage, Impact of Usage. 
+```python
+school_df1["QuestionGroup"] = school_df1["Description"].apply(categorize_question)
+```
+---
+# Exploratory Data Analysis (EDA) Cell Phone Policy
+.center[
+![](img/CellPhoneEDA.png){width=80%}
+]
+
+---
+# Exploratory Data Analysis (EDA) AI Policy 
+.center[
+![](img/AiPolicyEDA.png){width=80%}
+]
+---
+#Exploratory Data Analysis (EDA) Digital Literacy 
+.center[
+![](img/Digital Literacy EDA.png){width=80%}
+]
+---
+# Four Policy Models: (1&amp;2)
+- Predictors for all four models: Region, Locale, Poverty, School Size, School Level, Percent Students of Color.
+### Model 1: 
+- Binary Logistics Regression, Predicting whether a school subgroup has a cell‑phone policy (Yes/No) using a categorical variable I created called "HasPolicy".This model will test whether subgroup characteristics explain differences in policy presence.
+###Model 2:
+- Multinomial Logistic Regression, Predicting which strictness in terms of cell-phone policy (0–4) a subgroup (predictors) falls into using a categorical variable "StrictnessCode". This model will determine whether subgroup characteristics predict stricter or looser cell‑phone rules.
+---
+# Four Policy Models Cont. (3&amp;4)
+###Model 3:
+- Binary Logistic Regression, Predicting whether a subgroup has an AI policy (Yes/No) using a categorical variable "HasAIPolicy". This model will test whether AI policy adoption varies by subgroup.
+###Model 4: 
+- Binary Logistic Regression, Predicts whether a subgroup offers digital literacy instruction (Yes/No) using a categorical variable "HasDLInstruction". This model will whether digital literacy instruction varies by subgroup.
+---
+#Outcomes of Models: 
+
+##All four models output: 
+- Produced the Same Statistical Pattern, Every model (logistic, ordinal, multinomial) returned Coefficients ≈ 0, p‑values ≈ 1.000, Pseudo R² ≈ 0, Log‑Likelihood identical to the null model.
+- This means that none of the subgroup predictors explained any variation in any of the four outcomes. The Subgroups (Region, Locale, Poverty, School Size, School Level, Percent Students of Color) showed no predictive relationship with Cell‑phone policy presence, Cell‑phone policy strictness, AI policy presence and Digital literacy instruction.
+---
+#Why did all four models show no predictive relationship with the various policies: 
+- The dataset from NCES is not individual‑level — it is subgroup‑level aggregated percentages thus creating many limitations of what we are able to do within different models with the data.
+- Loss of individual variation: Aggregation collapses the differences within subgroups, leaving no variation for models to detect.
+- Uniformity across subgroups: The outcomes (policy presence, strictness, AI policy, digital literacy) are distributed almost identically across all subgroups, so the predictors we are using cannot differentiate them.
+- Due to the structural constraints that our aggregated data brings, it shows that no matter what statistical or machine‑learning model we use (logistic, ordinal, multinational, random forest, bagging, boosting) none can find subgroup differences that do not exist in the underlying data we are using from the NCES survey.
+---
+#Where do we go from here?
+- Even though our models performed terribly, we still have an answer for our research question of How do U.S. public schools differ in their policies on cell‑phone usage, AI usage, and digital literacy instruction? How are these differences explained by school characteristics such as region, grade level, locale, poverty level, school size, and student demographics?
+- The answer is subgroup characteristics do not explain differences in policy presence, strictness, AI policy adoption, or digital literacy instruction. Technology policies in schools do vary, but not in ways that align with demographic or structural subgroup characteristics we are analyzing.
+- We must shift to data visualization as our analytical tool.
+- Vizualizations will show the actual distribution of policy outcomes, highlight patterns that models cannot capture due to aggregation and allow us to compare subgroups visually even when statistical models show no predictive power. 
+---
+#Types of Visualizations used: 
+####The following charts were used for Used for Cell‑Phone Policy Presence, Cell‑Phone Policy Strictness, AI Policy Presence, Digital Literacy Instruction
+- Bar Charts (Top Categories by Domain): Show the most common response categories within each policy domain. Compare subgroup percentages (Region, Locale, Poverty, School Size, School Level, Percent Students of Color).
+- Heatmaps (Subgroup × Category): Display the intensity of category (Yes/No) percentages across subgroups to highlight whether any subgroup stands out.
+- Ranked Subgroup Comparison Charts: Rank subgroups from highest to lowest percentage for a given category (Yes/No).
+---
+#Cell Phone Policy/Strictness Graphs Summary 
+###Cell‑Phone Policy Presence:
+- Nearly all subgroups report having a cell‑phone policy.
+- Very little variation across Region, Locale, Poverty, School Size, or School Level.
+
+###Cell‑Phone Policy Strictness:
+- Strictness levels vary (e.g., “Not Allowed,” “Allowed with Restrictions”), but the pattern of variation is similar across all subgroups.
+- No subgroup consistently shows stricter or looser policies.
+---
+#AI Policy/Digital Literacy Graphs Summary: 
+###AI Policy:
+- AI policies are extremely rare across all subgroups.
+- Visuals show a dominant “No AI Policy” category everywhere.
+###Digital Literacy: 
+- Moderate adoption overall, but again distributed evenly across subgroups.
+- No subgroup stands out as more or less likely to offer instruction.
+---
+#Implications for Stakeholders (Parents and Teachers): 
+####Stakeholders include Parents, Teachers, Students and Administrators
+- Parents: Policies appear consistent across all types of schools from my models and visualizations, parents should not expect major differences based on region, poverty level, school size etc. Minimal subgroup differences suggests that concerns about fairness or unequal treatment across different school types are not supported by the data. Parents should use this information to focus on policy quality, and enforcement, rather than demographic factors.
+- Teachers: From my models and visualizations it shows that Teachers may have the ability to see strictness levels vary in different grades and classrooms, but not in ways tied to school characteristics. AI policies are rare everywhere for now, teachers may need to rely on their own professional judgment and school‑level guidance on how to approach and deal with AI. 
+---
+#Implication for Stakeholders (Students and Administrators)
+- Students: From the models and visualizations, they experience similar policy environments regardless of the type of school they attend. Students should understand that differences in policy enforcement are local decisions, not demographic inequities. Students should use these findings to advocate for clearer policies.
+- Administration: Overall takeaway for administrators from my models and visualizations is the minimal subgroup differences indicates that these policy effectiveness is likely driven by the implementation quality, not school characteristics.
+---
+#Ethical Considerations: 
+- Ethical considerations: Due to the outcome of my models and data visualizations, the ethical considerations of cell phone, AI and Digital literacy polices and instruction shift from who is affected by these polices, to how these polices affect students in their lives academically, socially and emotionally. This is because schools at heart care about their students overall health and well being. If these policies are a detrement to the overall health to students then the schools need to wrestle with the ethical dilemma of balacing cell-phone policies and students health. 
+- While the ethical dilemma I started with was is it ethical to restrict student access to their phones during the school day? Due to my findings it appears that schools across the country say yes, but the impact on the students overall health is unclear. 
+---
+#Legal Considerations: 
+- The consistency of the data on policies across the subgroups made me consider the legal implications about local and state authority over these policies and the variety of concerns that may arise from parents and students. 
+-Does restricting phones could limit a student’s ability to contact family in emergencies? Could schools could face liability if a student cannot reach help due to a strict policy?
+- While the data shows how all schools across all demographics are adressing cell phone policies in a similar way, if these legal challenges do start to arise I wonder if it will change the similarities in approach of policies across school demographics. 
+---
+#Societal Considerations: 
+- From my models and visualizations, these policies appear to be a national norm across schools with very little difference. This applies to society because these policies are reshaping student experiences across the entire U.S. educational system.
+- Overall the biggest societal implication for these policies is the students and how it is affecting them similar to the ethical implications. These students are the next generation in our society, we need to apporach these policies in the correct way in order to limit the negative affects they can have on the students overall health and well-being. 
+
+
+
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create({
+  "highlightStyle": "github",
+  "highlightLines": true,
+  "countIncrementalSlides": false
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// add `data-at-shortcutkeys` attribute to <body> to resolve conflicts with JAWS
+// screen reader (see PR #262)
+(function(d) {
+  let res = {};
+  d.querySelectorAll('.remark-help-content table tr').forEach(tr => {
+    const t = tr.querySelector('td:nth-child(2)').innerText;
+    tr.querySelectorAll('td:first-child .key').forEach(key => {
+      const k = key.innerText;
+      if (/^[a-z]$/.test(k)) res[k] = t;  // must be a single letter (key)
+    });
+  });
+  d.body.setAttribute('data-at-shortcutkeys', JSON.stringify(res));
+})(document);
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
